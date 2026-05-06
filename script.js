@@ -8,25 +8,17 @@ const URLS_SCRIPT = {
     'DPS': 'https://script.google.com/macros/s/AKfycbwYallAI9iyq8ODWsoVcPVkI_NnMQIvX7Ij3r6CDX7DBSfzDqZNp0Yw39R3urD5JXeZ/exec'
 };
 
-// --- FUNCIÓN PARA MOSTRAR MENSAJES ELEGANTES (Adiós Alertas feos) ---
 function mostrarToast(mensaje, esError = false) {
     const toast = document.getElementById('toast-notification');
     toast.innerText = mensaje;
     toast.classList.remove('error');
     if(esError) toast.classList.add('error');
-    
     toast.classList.add('show');
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 4000);
+    setTimeout(() => { toast.classList.remove('show'); }, 4000);
 }
 
-// --- INICIALIZACIÓN ---
-window.onload = function() {
-    renderizarHistorial();
-};
+window.onload = function() { renderizarHistorial(); };
 
-// --- NAVEGACIÓN ---
 window.seleccionarArea = function(area) {
     areaSeleccionada = area;
     document.getElementById('logo-sidebar').src = `logo_${area.toLowerCase()}.png`;
@@ -35,17 +27,10 @@ window.seleccionarArea = function(area) {
     history.pushState({view: 'app'}, '');
 };
 
-window.onpopstate = function() {
-    location.reload();
-};
+window.onpopstate = function() { location.reload(); };
 
-// --- HISTORIAL ---
 function guardarEnHistorial(area, nombreArchivo) {
-    const registro = {
-        area: area,
-        nombreArchivo: nombreArchivo,
-        fecha: new Date().getTime()
-    };
+    const registro = { area: area, nombreArchivo: nombreArchivo, fecha: new Date().getTime() };
     let historial = JSON.parse(localStorage.getItem('historial_sigi') || '[]');
     historial.push(registro);
     localStorage.setItem('historial_sigi', JSON.stringify(historial));
@@ -57,38 +42,23 @@ function renderizarHistorial() {
     const colDps = document.getElementById('col-dps');
     const ahora = new Date().getTime();
     const DOS_DIAS = 2 * 24 * 60 * 60 * 1000;
-
     let historial = JSON.parse(localStorage.getItem('historial_sigi') || '[]');
     historial = historial.filter(item => (ahora - item.fecha) < DOS_DIAS);
     localStorage.setItem('historial_sigi', JSON.stringify(historial));
-
     if (historial.length > 0) {
         contenedor.style.display = 'block';
         colCem.innerHTML = ""; colDps.innerHTML = "";
         historial.sort((a, b) => b.fecha - a.fecha);
-
         historial.forEach(item => {
             const fechaObj = new Date(item.fecha);
-            const dia = String(fechaObj.getDate()).padStart(2, '0');
-            const mes = String(fechaObj.getMonth() + 1).padStart(2, '0');
-            const hora = String(fechaObj.getHours()).padStart(2, '0');
-            const min = String(fechaObj.getMinutes()).padStart(2, '0');
-            const fechaFormateada = `${dia}/${mes}, ${hora}:${min} hrs.`;
-
-            const cardHtml = `
-                <div class="card-historial">
-                    <span class="tag tag-${item.area.toLowerCase()}">${item.area}</span>
-                    <span class="file-name" title="${item.nombreArchivo}">${item.nombreArchivo}</span>
-                    <span class="date">${fechaFormateada}</span>
-                </div>
-            `;
-            if (item.area === 'CEM') colCem.innerHTML += cardHtml;
-            else if (item.area === 'DPS') colDps.innerHTML += cardHtml;
+            const dia = String(fechaObj.getDate()).padStart(2, '0'), mes = String(fechaObj.getMonth() + 1).padStart(2, '0');
+            const hora = String(fechaObj.getHours()).padStart(2, '0'), min = String(fechaObj.getMinutes()).padStart(2, '0');
+            const cardHtml = `<div class="card-historial"><span class="tag tag-${item.area.toLowerCase()}">${item.area}</span><span class="file-name" title="${item.nombreArchivo}">${item.nombreArchivo}</span><span class="date">${dia}/${mes}, ${hora}:${min} hrs.</span></div>`;
+            if (item.area === 'CEM') colCem.innerHTML += cardHtml; else colDps.innerHTML += cardHtml;
         });
     }
 }
 
-// --- PDF ---
 document.getElementById('pdfInput').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -116,27 +86,54 @@ async function renderPage(num) {
 window.cambiarPagina = function(delta) {
     if (!pdfDocActual) return;
     if (pageNum + delta > 0 && pageNum + delta <= pdfDocActual.numPages) {
-        pageNum += delta;
-        renderPage(pageNum);
+        pageNum += delta; renderPage(pageNum);
     }
 };
 
-// --- FIRMA ---
+// --- FIRMA CON NORMALIZACIÓN DE TAMAÑO ---
 let firmaImgData = null;
 const wrapper = document.getElementById('firma-wrapper');
+
 document.getElementById('firmaInput').addEventListener('change', (e) => {
     const file = e.target.files[0];
+    if (!file) return;
+
     const reader = new FileReader();
     reader.onload = (event) => {
-        firmaImgData = event.target.result;
-        document.getElementById('firma-img').src = firmaImgData;
-        xOffset = 50; yOffset = 50;
-        wrapper.style.transform = `translate3d(50px, 50px, 0)`;
-        wrapper.style.width = "150px"; 
-        wrapper.style.top = "0px"; wrapper.style.left = "0px";
-        wrapper.style.display = 'block';
-        wrapper.classList.remove('confirmada');
-        document.getElementById('btnEnviar').style.display = 'block';
+        const img = new Image();
+        img.onload = () => {
+            // Creamos un canvas para redimensionar la firma si es muy grande
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Definimos un tamaño máximo para la firma (800px de ancho es ideal)
+            const MAX_WIDTH = 800;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Convertimos a PNG para mantener calidad y ligereza
+            firmaImgData = canvas.toDataURL("image/png");
+            document.getElementById('firma-img').src = firmaImgData;
+            
+            // Reset visor de firma
+            xOffset = 50; yOffset = 50;
+            wrapper.style.transform = `translate3d(50px, 50px, 0)`;
+            wrapper.style.width = "150px"; 
+            wrapper.style.top = "0px"; wrapper.style.left = "0px";
+            wrapper.style.display = 'block';
+            wrapper.classList.remove('confirmada');
+            document.getElementById('btnEnviar').style.display = 'block';
+        };
+        img.src = event.target.result;
     };
     reader.readAsDataURL(file);
 });
@@ -162,21 +159,15 @@ document.addEventListener("mousemove", (e) => {
         if (newWidth > 40) wrapper.style.width = newWidth + "px";
     }
 });
-wrapper.addEventListener('dblclick', () => {
-    wrapper.classList.toggle('confirmada');
-});
+wrapper.addEventListener('dblclick', () => { wrapper.classList.toggle('confirmada'); });
 
-// --- ENVÍO FINAL ---
 document.getElementById('btnEnviar').addEventListener('click', async () => {
     const n = document.getElementById('nombreProfesor').value;
     const btn = document.getElementById('btnEnviar');
-    
     if(!n) return mostrarToast("Por favor, escribe tu nombre.", true);
     if(!wrapper.classList.contains('confirmada')) return mostrarToast("Debes fijar la firma con doble clic.", true);
 
-    btn.disabled = true;
-    btn.innerText = "PROCESANDO...";
-    btn.classList.add('processing');
+    btn.disabled = true; btn.innerText = "PROCESANDO..."; btn.classList.add('processing');
 
     try {
         const pdfLibDoc = await PDFDocument.load(pdfBytesOriginal);
@@ -185,23 +176,18 @@ document.getElementById('btnEnviar').addEventListener('click', async () => {
         const firmaImg = await pdfLibDoc.embedPng(firmaImgData);
         
         const canvas = document.getElementById('pdf-render');
-        const rect = canvas.getBoundingClientRect();
-        const wrapRect = wrapper.getBoundingClientRect();
-        
-        const scaleX = currentPage.getWidth() / canvas.width;
-        const scaleY = currentPage.getHeight() / canvas.height;
+        const rect = canvas.getBoundingClientRect(), wrapRect = wrapper.getBoundingClientRect();
+        const scaleX = currentPage.getWidth() / canvas.width, scaleY = currentPage.getHeight() / canvas.height;
 
         currentPage.drawImage(firmaImg, {
             x: (wrapRect.left - rect.left) * scaleX,
             y: (rect.bottom - wrapRect.bottom) * scaleY,
-            width: wrapRect.width * scaleX,
-            height: wrapRect.height * scaleY,
+            width: wrapRect.width * scaleX, height: wrapRect.height * scaleY,
         });
 
         const pdfBase64 = await pdfLibDoc.saveAsBase64();
         const limpio = n.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim().replace(/\s+/g, '_');
-        const codigo = nombreOriginal.split('_')[0];
-        const nombreFinal = `${limpio}_${codigo}.pdf`;
+        const codigo = nombreOriginal.split('_')[0], nombreFinal = `${limpio}_${codigo}.pdf`;
         
         await fetch(URLS_SCRIPT[areaSeleccionada], {
             method: 'POST',
@@ -210,19 +196,10 @@ document.getElementById('btnEnviar').addEventListener('click', async () => {
         });
 
         guardarEnHistorial(areaSeleccionada, nombreFinal);
-
-        btn.classList.remove('processing');
-        btn.classList.add('success');
-        btn.innerText = "¡ENVIADO!";
-
-        setTimeout(() => {
-            location.reload();
-        }, 3000);
-
+        btn.classList.remove('processing'); btn.classList.add('success'); btn.innerText = "¡ENVIADO!";
+        setTimeout(() => { location.reload(); }, 3000);
     } catch (e) {
-        btn.disabled = false;
-        btn.innerText = "ERROR - REINTENTAR";
-        btn.classList.remove('processing');
+        btn.disabled = false; btn.innerText = "ERROR - REINTENTAR"; btn.classList.remove('processing');
         mostrarToast("Hubo un error al enviar. Reintenta.", true);
     }
 });
