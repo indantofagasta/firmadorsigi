@@ -4,8 +4,8 @@ const { PDFDocument } = PDFLib;
 
 let pdfDocActual = null, pdfBytesOriginal = null, pageNum = 1, nombreOriginal = "", areaSeleccionada = "";
 const URLS_SCRIPT = {
-    'CEM': 'https://script.google.com/macros/s/AKfycbx6ZgoFXuzmQKZeP2sMCjWjGxXuwmT3OB3XMOG7IxRkKY2K5lDtowxP-7S_qWzuZ5Nb/exec',
-    'DPS': 'https://script.google.com/macros/s/AKfycbwYallAI9iyq8ODWsoVcPVkI_NnMQIvX7Ij3r6CDX7DBSfzDqZNp0Yw39R3urD5JXeZ/exec'
+    'CEM': 'https://script.google.com/macros/s/AKfycby7wbTnQ-zSzqkLVIvIdzOJYwMbJT3RowxAhIn8bhv_2rnZpSV0qQtA4dxLIX3ornpX/exec',
+    'DPS': 'https://script.google.com/macros/s/AKfycbw65xfez7I6IZCbJheTJ7OTbhAiF1f6NOgyvtDP_rn2Hq-A7vOnco45pLezttRpUurX/exec'
 };
 
 function mostrarToast(mensaje, esError = false) {
@@ -105,7 +105,7 @@ document.getElementById('firmaInput').addEventListener('change', (e) => {
             // Creamos un canvas para redimensionar la firma si es muy grande
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            
+
             // Definimos un tamaño máximo para la firma (800px de ancho es ideal)
             const MAX_WIDTH = 800;
             let width = img.width;
@@ -123,11 +123,11 @@ document.getElementById('firmaInput').addEventListener('change', (e) => {
             // Convertimos a PNG para mantener calidad y ligereza
             firmaImgData = canvas.toDataURL("image/png");
             document.getElementById('firma-img').src = firmaImgData;
-            
+
             // Reset visor de firma
             xOffset = 50; yOffset = 50;
             wrapper.style.transform = `translate3d(50px, 50px, 0)`;
-            wrapper.style.width = "150px"; 
+            wrapper.style.width = "150px";
             wrapper.style.top = "0px"; wrapper.style.left = "0px";
             wrapper.style.display = 'block';
             wrapper.classList.remove('confirmada');
@@ -174,7 +174,7 @@ document.getElementById('btnEnviar').addEventListener('click', async () => {
         const pages = pdfLibDoc.getPages();
         const currentPage = pages[pageNum - 1];
         const firmaImg = await pdfLibDoc.embedPng(firmaImgData);
-        
+
         const canvas = document.getElementById('pdf-render');
         const rect = canvas.getBoundingClientRect(), wrapRect = wrapper.getBoundingClientRect();
         const scaleX = currentPage.getWidth() / canvas.width, scaleY = currentPage.getHeight() / canvas.height;
@@ -188,7 +188,7 @@ document.getElementById('btnEnviar').addEventListener('click', async () => {
         const pdfBase64 = await pdfLibDoc.saveAsBase64();
         const limpio = n.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim().replace(/\s+/g, '_');
         const codigo = nombreOriginal.split('_')[0], nombreFinal = `${limpio}_${codigo}.pdf`;
-        
+
         await fetch(URLS_SCRIPT[areaSeleccionada], {
             method: 'POST',
             body: JSON.stringify({ base64: pdfBase64, filename: nombreFinal }),
