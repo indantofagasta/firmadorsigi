@@ -5,7 +5,7 @@ const { PDFDocument } = PDFLib;
 let pdfDocActual = null, pdfBytesOriginal = null, pageNum = 1, nombreOriginal = "", areaSeleccionada = "";
 
 // ÚNICA URL del script de Google (reemplaza por la del deployment nuevo)
-const URL_SCRIPT_UNICA = 'PEGA_AQUI_LA_URL_DEL_NUEVO_DEPLOYMENT/exec';
+const URL_SCRIPT_UNICA = 'https://script.google.com/macros/s/AKfycbyh9eZX0gae3_ZpbnDcX-8scouFVIXyetj_XixD0nKDiDzZv203PpNS5FDdef_HZTH_/exec';
 
 function mostrarToast(mensaje, esError = false) {
     const toast = document.getElementById('toast-notification');
