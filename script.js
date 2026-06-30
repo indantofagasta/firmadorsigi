@@ -3,10 +3,9 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
 const { PDFDocument } = PDFLib;
 
 let pdfDocActual = null, pdfBytesOriginal = null, pageNum = 1, nombreOriginal = "", areaSeleccionada = "";
-const URLS_SCRIPT = {
-    'CEM': 'https://script.google.com/macros/s/AKfycby7wbTnQ-zSzqkLVIvIdzOJYwMbJT3RowxAhIn8bhv_2rnZpSV0qQtA4dxLIX3ornpX/exec',
-    'DPS': 'https://script.google.com/macros/s/AKfycbw65xfez7I6IZCbJheTJ7OTbhAiF1f6NOgyvtDP_rn2Hq-A7vOnco45pLezttRpUurX/exec'
-};
+
+// ÚNICA URL del script de Google (reemplaza por la del deployment nuevo)
+const URL_SCRIPT_UNICA = 'PEGA_AQUI_LA_URL_DEL_NUEVO_DEPLOYMENT/exec';
 
 function mostrarToast(mensaje, esError = false) {
     const toast = document.getElementById('toast-notification');
@@ -189,9 +188,9 @@ document.getElementById('btnEnviar').addEventListener('click', async () => {
         const limpio = n.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim().replace(/\s+/g, '_');
         const codigo = nombreOriginal.split('_')[0], nombreFinal = `${limpio}_${codigo}.pdf`;
 
-        await fetch(URLS_SCRIPT[areaSeleccionada], {
+        await fetch(URL_SCRIPT_UNICA, {
             method: 'POST',
-            body: JSON.stringify({ base64: pdfBase64, filename: nombreFinal }),
+            body: JSON.stringify({ area: areaSeleccionada, base64: pdfBase64, filename: nombreFinal }),
             mode: 'no-cors'
         });
 
